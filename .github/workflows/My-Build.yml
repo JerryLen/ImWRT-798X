@@ -1,4 +1,4 @@
-name: ImmortalWrt-24.10-6.6固件构建
+name: My-ImmortalWrt-24.10-6.6固件构建
 
 on:
   repository_dispatch:
@@ -252,7 +252,7 @@ jobs:
           ## 功能
           - 优化网络性能，支持USB共享、HNAT加速、Ksmbd共享等。
           ${{ env.ENABLE_5G_25DB == 'true' && '- 支持 5G 25dB 高功率。' || '' }}
-          - 默认地址: 192.168.2.1 (密码空)
+          - 默认地址: 192.168.10.1 (密码空)
           ## 安装
           - 备份配置，使用sysupgrade保留配置，factory全新安装。
           - 通过Web上传.bin文件，重启。
@@ -275,7 +275,7 @@ jobs:
           ## 特性
           - 优化性能，支持USB/HNAT/Ksmbd。
           ${{ env.ENABLE_5G_25DB == 'true' && '- 5G 25dB 高功率。' || '' }}
-          - 地址: 192.168.2.1 (空密码)
+          - 地址: 192.168.10.1 (空密码)
           ## 安装
           备份 > 上传sysupgrade/factory > 重启。
           详情见README.md。仓库: https://github.com/padavanonly/immortalwrt-mt798x-24.10
