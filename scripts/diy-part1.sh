@@ -10,4 +10,9 @@
 # 描述: OpenWrt DIY 脚本第一部分 (更新 feeds 之前)
 
 
+sed -i '1i src-git kenzo https://github.com/kenzok8/openwrt-packages' feeds.conf.default
+git clone https://github.com/zzsj0928/luci-app-pushbot.git package/luci-app-pushbot
+git clone https://github.com/fw876/helloworld.git package/luci-app-ssr-plus
+
+
 
