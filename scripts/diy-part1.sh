@@ -11,7 +11,6 @@
 
 
 sed -i '1i src-git kenzo https://github.com/JerryLen/openwrt-packages' feeds.conf.default
-git clone https://github.com/fw876/helloworld.git package/luci-app-ssr-plus
 
 
 
