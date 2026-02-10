@@ -64,14 +64,11 @@ env:
   UPLOAD_FIRMWARE: true
   UPLOAD_RELEASE: true
   TZ: Asia/Shanghai
-  WEBDAV_URL: ${{ secrets.WEBDAV_URL }}
-  WEBDAV_USERNAME: ${{ secrets.WEBDAV_USERNAME }}
-  WEBDAV_PASSWORD: ${{ secrets.WEBDAV_PASSWORD }}
   ENABLE_5G_25DB: ${{ github.event.inputs.enable_5g_25db || true }}
 
 jobs:
   check-source-updates:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       should_build: ${{ steps.check.outputs.should_build }}
     steps:
@@ -145,6 +142,54 @@ jobs:
           echo "export PATH=/usr/lib/ccache:\$PATH" >> $GITHUB_ENV
           echo "export CCACHE_DIR=\$HOME/.ccache" >> $GITHUB_ENV
           ccache -M 5G
+
+          - name: 检查服务器配置
+            if: (!cancelled())
+            run: |
+              echo "警告⚠"
+              echo "若分配的服务器性能不足，务必及时取消，重新运行！"
+              echo "已知编译成功CPU型号：8370C,8171M"
+              echo "已知性能不足CPU型号：8272CL,E5系列"
+              echo "--------------------------CPU信息--------------------------"
+              echo "CPU物理数量:$(cat /proc/cpuinfo| grep "physical id"| sort| uniq| wc -l)"
+              echo -e "CPU核心及版本信息：$(cat /proc/cpuinfo | grep name | cut -f2 -d: | uniq -c) \n"
+              echo "--------------------------内存信息--------------------------"
+              echo "已安装内存详细信息："
+              sudo lshw -short -C memory | grep GiB
+              echo -e "\n"
+              echo "--------------------------硬盘信息--------------------------"
+              echo -e  "硬盘数量：$(ls /dev/sd* | grep -v [1-9] | wc -l) \n"
+              echo "硬盘详情："
+              df -Th
+              echo "=============================================================================="
+              echo "清理硬盘空间"
+              echo "=============================================================================="
+              
+              echo "Listing 100 largest packages"
+              dpkg-query -Wf '${Installed-Size}\t${Package}\n' | sort -n | tail -n 100
+              df -h
+              echo "Removing large packages"
+              sudo apt-get remove -y '^dotnet-.*'
+              sudo apt-get remove -y '^llvm-.*'
+              sudo apt-get remove -y 'php.*'
+              sudo apt-get remove -y '^mongodb-.*'
+              sudo apt-get remove -y '^mysql-.*'
+              sudo apt-get remove -y azure-cli google-cloud-sdk hhvm google-chrome-stable firefox powershell mono-devel libgl1-mesa-dri
+              sudo apt-get autoremove -y
+              sudo apt-get clean
+              df -h
+              echo "Removing large directories"
+              
+              sudo rm -rf /usr/share/dotnet/
+              sudo rm -rf /usr/local/graalvm/
+              sudo rm -rf /usr/local/.ghcup/
+              sudo rm -rf /usr/local/share/powershell
+              sudo rm -rf /usr/local/share/chromium
+              sudo rm -rf /usr/local/lib/android
+              sudo rm -rf /usr/local/lib/node_modules
+              echo "硬盘详情："
+              df -h
+
 
       - uses: actions/cache@v4
         with:
@@ -294,19 +339,6 @@ jobs:
             ${{ env.FIRMWARE }}/*factory*.*
             ${{ env.FIRMWARE }}/README.md
           overwrite: true
-
-      - name: 上传WebDAV
-        if: steps.version.outputs.status == 'success' && env.WEBDAV_URL && env.WEBDAV_USERNAME && env.WEBDAV_PASSWORD
-        run: |
-          set -e
-          FIRMWARE_FILES=$(find openwrt/bin/targets -type f \( -name "*sysupgrade*.*" -o -name "*factory*.*" -o -name "README.md" \) ! -name "*-bl2*")
-          [ -z "$FIRMWARE_FILES" ] && exit 0
-          for FILE in $FIRMWARE_FILES; do
-            NEW_NAME=$(basename "$FILE" | grep -q README && echo "${{ env.device_code }}-README.md" || echo "$FILE")
-            SHA256=$(sha256sum "$FILE" | cut -d' ' -f1)
-            curl --retry 3 --retry-delay 5 -u "${{ env.WEBDAV_USERNAME }}:${{ env.WEBDAV_PASSWORD }}" -T "$FILE" "${{ env.WEBDAV_URL }}/$NEW_NAME" -w "%{http_code}" -o /dev/null || exit 1
-            echo "上传成功：$NEW_NAME (SHA256: $SHA256)"
-          done
 
       - name: 清理旧发布
         if: steps.tag.outputs.status == 'success'
