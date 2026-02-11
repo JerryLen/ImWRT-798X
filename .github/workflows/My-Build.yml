@@ -192,7 +192,7 @@ jobs:
           ./scripts/feeds update -a && ./scripts/feeds install -a
           $GITHUB_WORKSPACE/$DIY_P2_SH
           echo "====================配置文件===================="
-          cat ../$CONFIG_FILE
+          cat ./$CONFIG_FILE
           echo "================================================"
           make defconfig
           make download -j8
